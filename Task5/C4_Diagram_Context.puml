@@ -1,0 +1,71 @@
+@startuml C4_Context_Diagram
+
+skinparam defaultTextAlignment center
+
+set separator none
+
+title Bank Standart Context Diagram - Containers
+
+top to bottom direction
+
+!$ICONURL = "https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v3.0.0/icons"
+!include $ICONURL/common.puml
+
+!include $ICONURL/devicons/postgresql.puml
+!include $ICONURL/font-awesome/server.puml
+!include $ICONURL/font-awesome-5/database.puml
+
+!include <C4/C4_Container>
+
+Boundary(boundaryPerson, "<person>") {
+    Person(NewClient, "Новый клиент", "Подает заявку через сайт")
+    Person(OldClient, "Существующий клиент", "Открывает депозит онлайн")
+}
+
+Boundary(boundaryStuff, "<stuff>") {
+    Person(CallCenterAgent, "Менеджер кол-центра", "Обработка заявок")
+    Person(BackOffice, "Бэк-офис", "Валидация условия")
+}
+
+Enterprise_Boundary("BankStandart_Boundary", "Standart Bank") {
+    System(BankStandart.Website, "Bank Standart Web site", "Сайт банка")
+    System(BankStandart.InternetBank, "Internet Bank Standart", "Интернет-банк")
+    System(BankStandart.ABS, "АБС", "АБС")    
+    System(BankStandart.CreditService, "Credit Service", "Система Кредитования") 
+    System(BankStandart.PreapprovalService, "Preapproval Service", "Система Предодобрения")      
+}
+System(BankStandart.SFTPServer, "SFTP-сервер", "Хранение файлов со ставками")
+System_Ext(BankStandart.SmsGateway, "SMS Gateway", "Интеграция с оператором по смс")
+System_Ext(CallCenter, "Call-center", "Кол-центр")
+System_Ext(PartnerCallCenter, "External Call-center", "Партнёрский кол-центр")
+
+Rel(NewClient, BankStandart.Website, "Подает заявку")
+Rel(OldClient, BankStandart.InternetBank, "Онлайн-заявка")
+
+Rel(BankStandart.Website, CallCenter, "REST API")
+Rel(CallCenter, CallCenterAgent, "Назначение")
+Rel(CallCenterAgent, BankStandart.ABS, "Ввод данных")
+
+Rel(BankStandart.InternetBank, BankStandart.ABS, "Обращение через Kafka")
+Rel(BankStandart.InternetBank, BankStandart.SmsGateway, "Запрос SMS-кода")
+
+Rel(BankStandart.ABS, BackOffice, "Согласование условий")
+Rel(BankStandart.ABS, BankStandart.SmsGateway, "Уведомление и статусы")
+Rel(BankStandart.CreditService, BackOffice, "Согласование условий")
+Rel(BankStandart.PreapprovalService, BackOffice, "Согласование условий")
+Rel(BankStandart.CreditService, BankStandart.SmsGateway, "Отправка SMS")
+Rel(BankStandart.PreapprovalService, BankStandart.SmsGateway, "Отправка SMS")
+
+Rel(BankStandart.ABS, BankStandart.PreapprovalService, "Анализ по предодобрению")
+Rel(BankStandart.PreapprovalService, BankStandart.ABS, "Согласование условий")
+Rel(BankStandart.Website, BankStandart.PreapprovalService, "Согласование условий")
+
+Rel(BankStandart.ABS, BankStandart.CreditService, "Кредитование")
+Rel(BankStandart.CreditService, BankStandart.ABS, "Согласование условий")
+Rel(BankStandart.Website, BankStandart.CreditService, "Согласование условий")
+
+Rel(BankStandart.ABS, BankStandart.SFTPServer, "Отправка SMS")
+Rel(BankStandart.SFTPServer, CallCenter, "")
+Rel(BankStandart.SFTPServer, PartnerCallCenter, "")
+
+@enduml
